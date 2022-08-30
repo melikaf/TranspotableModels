@@ -59,8 +59,15 @@ python3 soph_models.py
     - Average Log Loss of the given prediction.
     - Number of Errors in predicting log loss. (Samples with prediction 0 or 1.)
 
-  
+## p_calculator.py functions and information ##
+- calc_p: For given source and target zones, calculate and return related dataframes and json of conditional probabilities in both populations.
+- calc_p_def: For given source and target zones, calculate and return related dataframes and json of conditional probabilities in both populations. This function is for sophisticated models and use important columns.
 
-  - Outputs:
+## transport.py ##
+
+This is the main file. By running this file as mentioned above, you will run CP, D and OD models for all the pairs mentioned in the config.py. The output, will be written in result.csv file. The outputs are ordered as: source_population, Target Population, Average Log Loss for CP, Average Log Loss for D, Average Log Loss for OD, number of samples failed in D model, total number of samples, Rate of the failure for D model.
+
+## soph_models.py ##
+This is the main file. By running this file as mentioned above, you will run LR and XGB based models for all the pairs mentioned in the config.py. The output, will be written in soph_models.csv file.  The outputs are ordered as: source_population, Target Population, LR-C Avg Loss, LR-D Avg Loss, LR-O Avg Loss, XGB-C Avg Loss, XGB-D Avg Loss, XGB-OD Avg Log loss
 
     
