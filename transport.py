@@ -21,4 +21,4 @@ for pair in zone_pairs:
     l1, l2, l3 = calc_loss(labels, direct_prob, ratio_prob, ods_mult_prob)
     print("results", l1,l2,l3, "size", number_of_samples, "bad", ratio_bad, "percent", ratio_bad/number_of_samples)
     to_write = [pair[0], pair[1], l1, l2, l3, ratio_bad, number_of_samples, ratio_bad/number_of_samples]
-    append_list_as_row("results2.csv", to_write)
+    append_list_as_row("results.csv", to_write)
