@@ -21,8 +21,8 @@ python3 soph_models.py
 - important_cols: List of important features using for sophisticated models. (A default value can not be found for all the features)
 - def_key: Default Key containing tuples of important columns and their default value. Using for sophisticated models.
 
-## pred.py Functions and Indormation ##
-- calc_pred: 
+## pred.py functions and information ##
+- calc_pred: Calculate predicted conditional probabilities for all the pairs in the target dataset.
   - Inputes:
     - gp1: Dataframe used as the source population.
     - gp2: Dataframe used as the target population.
@@ -39,4 +39,28 @@ python3 soph_models.py
     - List of predicted conditional probabilities with OD model.
     - Number of instances where D model fails to predict a valid number (predicted conditional probability is greater than 1).
     - Total number of instances in this experiments. (Usually it is number of input features * number of samples).
+    
+- calc_loss: Calculate average log loss for all the given models.
+  - Inputes:
+    - List of true labels in the target populations.
+    - List of predicted conditional probabilities with CP model.
+    - List of predicted conditional probabilities with D model.
+    - List of predicted conditional probabilities with OD model.
+  - Outputs:
+    - Average Log Loss of CP model.
+    - Average Log Loss of D model.
+    - Average Log Loss of OD model.
+    
+- loss: Calculate average log loss for sophisticated models (XGB and LR based models.)
+  - Inputes:
+    - List of true labels in the target populations.
+    - List of predicted conditional probabilities with the sophisticated model.
+  - Outputs:
+    - Average Log Loss of the given prediction.
+    - Number of Errors in predicting log loss. (Samples with prediction 0 or 1.)
+
+  
+
+  - Outputs:
+
     
