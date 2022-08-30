@@ -1,106 +1,91 @@
 import numpy as np
-# #
-# def calc_pred(gp1, gp2, p, p2, label_col, defaults, h = 1):
-#     ratio_prob = []
-#     direct_prob = []
-#     labels = []
-#     counter_p2_0 = 0
-#     counter_p0 = 0
-#     counter_ratio1 = 0
-#     ods_prob = []
-#     ods_mult_prob = []
-#     print("shape", gp2.shape)
-#     columns = list(gp1.columns)
-#     columns.remove(label_col)
-#     columns.remove('ECOZONE')
-#     number_of_samples = 0
-#     ratio_bad = 0
-#     for index, row in gp2.iterrows():
-#         for c in columns:
-#             number_of_samples += 1
-#             key = (h, c, row[c])
-#             def_key = (h, c, defaults[c])
-#             # print(key, def_key)
-#             if p2[def_key] == 0:
-#                 counter_p2_0 += 1
-#                 print("p2 is zero", def_key)
-#             if p[def_key] == 0:
-#                 counter_p0 += 1
-#                 #print("Can not calculate ratio, p default is not available", key, def_key)
-#                 continue
-#             ratio_p = (p[key] / p[def_key]) * p2[def_key]
-#             if p[key] >= 1 or p2[key] >= 1:
-#                 print("P is greater than 1!!!!!", p[key], key)
-#                 continue
-#             odds_1 = p[key] / (1 - p[key])
-#             if ratio_p > 1:
-#                 ratio_bad += 1
-#                 ratio_p = 1
-#                 print("ratio prob greater than 1", key, def_key, ratio_p, p[key], p[def_key], p2[def_key])
-#             direct_p = p[key]
-#             ratio_prob.append(ratio_p)
-#             direct_prob.append(direct_p)
-#             labels.append(row[label_col])
-#             odds_def1 = p[def_key] / (1 - p[def_key])
-#             odds_def2 = p2[def_key] / (1 - p2[def_key])
-#             mult_pred = odds_1 * odds_def2 / odds_def1
-#             ods_mult_prob.append(mult_pred / (1 + mult_pred))
-#     return labels, direct_prob, ratio_prob, ods_mult_prob, ratio_bad, number_of_samples
-#
-#
-# def calc_loss(labels, direct_prob, ratio_prob, ods_mult_prob):
-#     from math import log2
-#     direct_loss = 0
-#     ratio_loss = 0
-#     odd_loss = 0
-#     counter = 0
-#     error_cnt = 0
-#     mult_loss = 0
-#     for i in range(len(labels)):
-#         counter += 1
-#
-#         try:
-#             direct = direct_prob[i]
-#             rat = ratio_prob[i]
-#             mult = ods_mult_prob[i]
-#             # print(direct, rat, labels[i])
-#
-#             # if labels[i] == 1:
-#             #  rat = 1-rat
-#             #  direct = 1-direct
-#             y = labels[i]
-#             l1 = -(y * log2(direct) + (1 - y) * log2(1 - direct))
-#             l2 = -(y * log2(rat) + (1 - y) * log2(1 - rat))
-#             print("mult,", mult)
-#             l4 = -(y * log2(mult) + (1 - y) * log2(1 - mult))
-#             if counter % 10000 == 0:
-#                 print(counter)
-#                 print(l1, l2, l4)
-#             direct_loss += l1
-#             ratio_loss += l2
-#             mult_loss += l4
-#         except Exception as E:
-#             print(E)
-#             error_cnt += 1
-#             continue
-#     return direct_loss/len(labels), ratio_loss/len(labels), mult_loss/len(labels)
 import xgboost as xgb
 from sklearn.linear_model import LogisticRegression
+from math import log
+
+
+def calc_pred(gp1, gp2, p, p2, label_col, split_col, defaults, h=1):
+    ratio_prob = []
+    direct_prob = []
+    labels = []
+    counter_p2_0 = 0
+    counter_p0 = 0
+
+    ods_mult_prob = []
+    columns = list(gp1.columns)
+    columns.remove(label_col)
+    columns.remove(split_col)
+    number_of_samples = 0
+    ratio_bad = 0
+    for index, row in gp2.iterrows():
+        for c in columns:
+            number_of_samples += 1
+            key = (h, c, row[c])
+            def_key = (h, c, defaults[c])
+            if p2[def_key] == 0:
+                counter_p2_0 += 1
+                continue
+            if p[def_key] == 0:
+                counter_p0 += 1
+                continue
+            ratio_p = (p[key] / p[def_key]) * p2[def_key]
+            if p[key] >= 1 or p2[key] >= 1:
+                continue
+            odds_1 = p[key] / (1 - p[key])
+            if ratio_p > 1:
+                ratio_bad += 1
+                ratio_p = 0.999999
+            direct_p = p[key]
+            ratio_prob.append(ratio_p)
+            direct_prob.append(direct_p)
+            labels.append(row[label_col])
+
+            odds_def1 = p[def_key] / (1 - p[def_key])
+            odds_def2 = p2[def_key] / (1 - p2[def_key])
+            mult_pred = odds_1 * odds_def2 / odds_def1
+            ods_mult_prob.append(mult_pred / (1 + mult_pred))
+            mul = mult_pred / (1 + mult_pred)
+
+    return labels, direct_prob, ratio_prob, ods_mult_prob, ratio_bad, number_of_samples
+
+
+def calc_loss(labels, direct_prob, ratio_prob, ods_mult_prob):
+    direct_loss = 0
+    ratio_loss = 0
+    counter = 0
+    error_cnt = 0
+    mult_loss = 0
+    for i in range(len(labels)):
+        counter += 1
+
+        try:
+            direct = direct_prob[i]
+            rat = ratio_prob[i]
+            mult = ods_mult_prob[i]
+            y = labels[i]
+            l1 = -(y * log(direct) + (1 - y) * log(1 - direct))
+            l2 = -(y * log(rat) + (1 - y) * log(1 - rat))
+            l4 = -(y * log(mult) + (1 - y) * log(1 - mult))
+            direct_loss += l1
+            ratio_loss += l2
+            mult_loss += l4
+        except Exception as E:
+            error_cnt += 1
+            continue
+    print("number of errors in calculating loss", error_cnt)
+    return direct_loss/len(labels), ratio_loss/len(labels), mult_loss/len(labels)
+
 
 def loss(y_test, preds):
-    from math import log2
+    from math import log
     number_of_errors = 0
-    #after ratio loss
     loss = 0
     for i in range(len(y_test)):
         try:
             y = y_test[i]
-            l = -(y * log2(preds[i][1]) + (1-y)*log2(1-preds[i][1]))
+            l = -(y * log(preds[i][1]) + (1-y)*log(1-preds[i][1]))
             loss += l
         except Exception as e:
-            #print(e, preds[i])
-            #l = -(y * log2(1) + (1-y)*log2(0.1))
-            #loss += l
             number_of_errors += 1
     res = loss/len(y_test)
     print("number of errors", number_of_errors, len(y_test), number_of_errors / len(y_test))
@@ -111,7 +96,6 @@ def loss(y_test, preds):
 def rat_models(preds,  p1_def_0, p1_def_1, p2_def_0, p2_def_1):
     val0 = p2_def_0 / p1_def_0
     val1 = p2_def_1 / p1_def_1
-    print(val0, val1)
     ratio_preds = []
     odds_preds = []
     for row in preds:

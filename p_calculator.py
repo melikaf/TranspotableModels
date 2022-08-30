@@ -1,59 +1,30 @@
 import pandas as pd
-
-important_cols = [
-   'Size>2', 'Size>1', 'Wildfire', 'Surface', 'Winter' , 'after2000', 'Size>3' , 'after2010', 'Size>-1', 'cause_H'
-]
-new_def = {
-'cause_H': '1',
-'Surface': '0',
-'Wildfire': '0',
-'Winter': '0',
-'Size>-1': '1',
-'Size>1': '0',
-'Size>2': '0',
-'Size>3': '0',
-'after2000': '0',
-'after2010': '0'
-
-}
+from config import defaults, important_cols
+#
+# important_cols = [
+#    'Size>2', 'Size>1', 'Wildfire', 'Surface', 'Winter' , 'after2000', 'Size>3' , 'after2010', 'Size>-1', 'cause_H'
+# ]
+# new_def = {
+# 'cause_H': '1',
+# 'Surface': '0',
+# 'Wildfire': '0',
+# 'Winter': '0',
+# 'Size>-1': '1',
+# 'Size>1': '0',
+# 'Size>2': '0',
+# 'Size>3': '0',
+# 'after2000': '0',
+# 'after2010': '0'
+#
+# }
 # important_cols = [
 #     'Size>2', 'Wildfire', 'Winter' , 'after2000',  'cause_H'
 # ]
-defaults = {
-    'cause_H': '1',
-    'cause_PB': '0',
-    'cause_L': '0',
-    'cause_RE': '0',
-    'cause_U': '0',
-    '1': '0',
-    '2': '0',
-    '3': '0',
-    '4': '0',
-    'Crown': '0',
-    'Dump': '0',
-    'Forest': '0',
-    'Grass': '0',
-    'Ground': '0',
-    'IFR': '0',
-    'OFR': '0',
-    'Other': '0',
-    'Prescribed Burn': '0',
-    'Req For Assist': '0',
-    'Request For Ass*': '0',
-    'Surface': '0',
-    'Wildfire': '0',
-    'Summer': '1',
-    'Fall': '0',
-    'Winter': '0',
-    'Spring': '0',
-    'Size>-4': '1', 'Size>-2': '1', 'Size>-1': '1', 'Size>0': '1',
-    'Size>1': '0', 'Size>2': '0', 'Size>3': '0', 'Size>4': '0', 'Size>5': '0', 'Size>6': '0',
-    'after1940': '1', 'after1950': '1', 'after1960': '1', 'after1970': '1', 'after1980': '1', 'after1990': '1',
-    'after2000': '0', 'after2010': '0', 'after2020': '0'
-}
+
+
 def calc_p(zone1, zone2):
 
-    fp = "/Users/melika/Documents/MScProject/FireData/correct_encoded.csv"
+    fp = "Data/correct_encoded.csv"
     df = pd.read_csv(fp, dtype=str)
     df = df.drop('Unnamed: 0',axis = 1)
 
@@ -101,21 +72,24 @@ def calc_p(zone1, zone2):
             for val in all_label_values:
                 if val != h:
                     not_counter_dict2[(val, c, row[c])] += 1
-    c0 = 0
-    c1 = 0
+    c0 = 1
+    c1 = 2
     p = defaultdict(lambda: 0)  # a dictionary for p(h | v_i), the keys would be (h, column_name, value of column)
     p2 = defaultdict(lambda: 0)  # a dictionary for p(h | v_i), the keys would be (h, column_name, value of column)
 
     for index, row in gp1.iterrows():
         h = row[label_col]
-        for c in columns:
-            key = (h, c, row[c])
-            p[key] = (counter_dict[key] + c0) / (counter_dict[key] + not_counter_dict[key] + c1)
+
     for index, row in gp2.iterrows():
         h = row[label_col]
         for c in columns:
             key = (h, c, row[c])
+            not_key = (1-h, c, row[c])
             p2[key] = (counter_dict2[key] + c0) / (counter_dict2[key] + not_counter_dict2[key] + c1)
+            p2[not_key] = (counter_dict2[not_key] + c0) / (counter_dict2[not_key] + not_counter_dict2[not_key] + c1)
+            p[key] = (counter_dict[key] + c0) / (counter_dict[key] + not_counter_dict[key] + c1)
+            p[not_key] = (counter_dict[not_key] + c0) / (counter_dict[not_key] + not_counter_dict[not_key] + c1)
+
     return gp1, gp2, p, p2
 
 
